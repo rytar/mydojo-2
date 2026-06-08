@@ -165,6 +165,10 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Palette.paper },
 
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     height: 52,
     flexDirection: 'row',
     alignItems: 'center',
@@ -173,7 +177,8 @@ const s = StyleSheet.create({
     backgroundColor: Palette.paper,
     borderBottomWidth: 1,
     borderBottomColor: Palette.line,
-    zIndex: 10,
+    zIndex: 20,
+    elevation: 20,
   },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   brandMark: { width: 22, height: 22 },
@@ -190,7 +195,7 @@ const s = StyleSheet.create({
     borderColor: Palette.line,
   },
 
-  scroll: { paddingBottom: 0 },
+  scroll: { paddingTop: 52, paddingBottom: 0 },
 
   hero: {
     minHeight: 240,

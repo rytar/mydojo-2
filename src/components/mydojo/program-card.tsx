@@ -140,11 +140,6 @@ export function ProgramCard({ program, featured, compact, rank, shelf, delay }: 
         <Pressable
           onPress={openProgram}
           style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-          {rank !== undefined && (
-            <LabelText color={Palette.faint} style={styles.rowRank}>
-              {rank}
-            </LabelText>
-          )}
           <View style={styles.rowThumb}>
             <Image
               source={program.image}
@@ -703,7 +698,7 @@ const styles = StyleSheet.create({
 
   /* ── Shelf card (carousel poster) ── */
   shelfCard: {
-    width: 162,
+    width: 176,
     borderRadius: Radius.lg,
     overflow: 'hidden',
     backgroundColor: Palette.paperSoft,
@@ -711,35 +706,35 @@ const styles = StyleSheet.create({
     borderColor: Palette.line,
   },
   shelfImageWrap: {
-    width: 162,
-    height: 214,
+    width: 176,
+    height: 232,
     backgroundColor: Palette.paperDeep,
     justifyContent: 'space-between',
   },
   shelfGlow: {
     position: 'absolute',
-    left: -40,
-    bottom: -40,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    left: -46,
+    bottom: -46,
+    width: 132,
+    height: 132,
+    borderRadius: 66,
     opacity: 0.5,
   },
   shelfTop: {
-    padding: 10,
+    padding: 12,
     alignItems: 'flex-start',
   },
   shelfBottom: {
-    padding: 10,
-    paddingTop: 6,
+    padding: 12,
+    paddingTop: 7,
     gap: 3,
   },
   shelfTitle: {
-    fontSize: 16,
-    lineHeight: 18,
+    fontSize: 17,
+    lineHeight: 19,
   },
   shelfCreatorName: {
-    fontSize: 10,
+    fontSize: 11,
     letterSpacing: 0.3,
     opacity: 0.85,
   },
@@ -766,26 +761,21 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
-  /* ── Compact row (App Store style) ── */  row: {
+  /* ── Compact row (App Store style) ── */
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 14,
     borderBottomWidth: 1,
     borderBottomColor: Palette.line,
     backgroundColor: 'transparent',
   },
-  rowRank: {
-    width: 18,
-    textAlign: 'center',
-    fontSize: 12,
-    letterSpacing: 0,
-  },
   rowThumb: {
-    width: 66,
-    height: 66,
-    borderRadius: 14,
+    width: 86,
+    height: 86,
+    borderRadius: 18,
     overflow: 'hidden',
     backgroundColor: Palette.paperDeep,
     flexShrink: 0,
