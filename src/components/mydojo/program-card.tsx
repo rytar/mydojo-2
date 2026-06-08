@@ -15,6 +15,8 @@ type ProgramCardProps = {
   featured?: boolean;
   compact?: boolean;
   rank?: number;
+  shelf?: boolean;
+  delay?: number;
 };
 
 type ProgramVisual = {
@@ -26,7 +28,7 @@ type ProgramVisual = {
 
 type MetricKind = 'weeks' | 'sessions' | 'time';
 
-export function ProgramCard({ program, featured, compact, rank }: ProgramCardProps) {
+export function ProgramCard({ program, featured, compact, rank, shelf, delay }: ProgramCardProps) {
   const openProgram = () => router.push({ pathname: '/program/[id]', params: { id: program.id } });
   const visual = visualForProgram(program);
   const level = labelForDifficulty(program.difficulty);
@@ -77,6 +79,54 @@ export function ProgramCard({ program, featured, compact, rank }: ProgramCardPro
                 </View>
               </View>
             </View>
+          </View>
+        </Pressable>
+      </Animated.View>
+    );
+  }
+
+  // ── SHELF (horizontal carousel poster card) ─────────────
+  if (shelf) {
+    return (
+      <Animated.View entering={FadeInDown.delay(delay ?? 0).duration(400)}>
+        <Pressable onPress={openProgram} style={({ pressed }) => [styles.shelfCard, pressed && styles.pressed]}>
+          <View style={styles.shelfImageWrap}>
+            <Image
+              source={program.image}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              contentPosition="center"
+            />
+            <LinearGradient
+              colors={['rgba(14,13,11,0)', 'rgba(14,13,11,0.08)', 'rgba(14,13,11,0.86)']}
+              locations={[0.28, 0.6, 1]}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={[styles.shelfGlow, { backgroundColor: visual.glow }]} />
+            <View style={styles.shelfTop}>
+              <DomainBadge domain={program.domain} visual={visual} contrast />
+            </View>
+            <View style={styles.shelfBottom}>
+              <DisplayText color={Palette.paperSoft} style={styles.shelfTitle} numberOfLines={2}>
+                {program.title}
+              </DisplayText>
+              <LabelText color={Palette.goldSoft} style={styles.shelfCreatorName} numberOfLines={1}>
+                {program.creator.name}
+              </LabelText>
+            </View>
+          </View>
+          <View style={styles.shelfMeta}>
+            <View style={styles.shelfRatingRow}>
+              <StarRating rating={program.rating} />
+              <LabelText style={styles.shelfReviewCount}>
+                {program.reviewCount >= 1000
+                  ? `${(program.reviewCount / 1000).toFixed(1)}k`
+                  : program.reviewCount}
+              </LabelText>
+            </View>
+            <LabelText style={[styles.shelfPrice, { color: visual.accent }]}>
+              {program.priceLabel}
+            </LabelText>
           </View>
         </Pressable>
       </Animated.View>
@@ -651,8 +701,72 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  /* ── Compact row (App Store style) ── */
-  row: {
+  /* ── Shelf card (carousel poster) ── */
+  shelfCard: {
+    width: 162,
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+    backgroundColor: Palette.paperSoft,
+    borderWidth: 1,
+    borderColor: Palette.line,
+  },
+  shelfImageWrap: {
+    width: 162,
+    height: 214,
+    backgroundColor: Palette.paperDeep,
+    justifyContent: 'space-between',
+  },
+  shelfGlow: {
+    position: 'absolute',
+    left: -40,
+    bottom: -40,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    opacity: 0.5,
+  },
+  shelfTop: {
+    padding: 10,
+    alignItems: 'flex-start',
+  },
+  shelfBottom: {
+    padding: 10,
+    paddingTop: 6,
+    gap: 3,
+  },
+  shelfTitle: {
+    fontSize: 16,
+    lineHeight: 18,
+  },
+  shelfCreatorName: {
+    fontSize: 10,
+    letterSpacing: 0.3,
+    opacity: 0.85,
+  },
+  shelfMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+  },
+  shelfRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  shelfReviewCount: {
+    fontSize: 10,
+    color: Palette.muted,
+    letterSpacing: 0.2,
+  },
+  shelfPrice: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+
+  /* ── Compact row (App Store style) ── */  row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,

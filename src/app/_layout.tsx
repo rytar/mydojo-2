@@ -22,6 +22,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Palette.paper } }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="program/[id]" />
+        <Stack.Screen name="catalog/[category]" />
       </Stack>
     </ThemeProvider>
   );

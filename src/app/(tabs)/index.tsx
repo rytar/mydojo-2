@@ -1,25 +1,61 @@
 ﻿import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { Bell, Search, SlidersHorizontal } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PaperTexture } from '@/components/mydojo/layout';
+import { Avatar } from '@/components/mydojo/primitives';
 import { ProgramCard } from '@/components/mydojo/program-card';
-import { Avatar, Pill, SectionHeader } from '@/components/mydojo/primitives';
 import { BodyText, DisplayText, LabelText } from '@/components/mydojo/typography';
-import { MaxContentWidth, Palette, Radius, Spacing } from '@/constants/theme';
+import { Palette, Radius, Spacing } from '@/constants/theme';
 import { currentUser } from '@/data/mydojo';
 import { listPrograms } from '@/services/programs';
 import type { Program } from '@/types/mydojo';
 
-const filters = ['Tous', 'Force', 'Perte de gras', 'Mobilité', 'Nutrition', 'Mindset'];
 const exploreHero = require('@/assets/images/mydojo-hero.png');
 
+type ShelfSection = {
+  id: string;
+  title: string;
+  programs: Program[];
+  categoryKey: string;
+};
+
+function buildSections(catalog: Program[]): ShelfSection[] {
+  if (catalog.length === 0) return [];
+
+  const byScore = [...catalog].sort((a, b) => b.score - a.score);
+  const byRating = [...catalog].sort((a, b) => b.rating - a.rating);
+
+  const sections: ShelfSection[] = [
+    { id: 'top-jour', title: 'Top du jour', programs: byScore.slice(0, 6), categoryKey: 'top-jour' },
+    { id: 'top-mois', title: 'Top du mois', programs: byRating.slice(0, 6), categoryKey: 'top-mois' },
+    { id: 'pour-toi', title: 'Recommandé pour toi', programs: catalog.slice(0, 6), categoryKey: 'pour-toi' },
+  ];
+
+  const domainEntries: { id: Program['domain']; label: string; key: string }[] = [
+    { id: 'force', label: 'Force & Performance', key: 'force' },
+    { id: 'perte-de-gras', label: 'Perte de gras', key: 'perte-de-gras' },
+    { id: 'mobilite', label: 'Mobilité', key: 'mobilite' },
+    { id: 'nutrition', label: 'Nutrition', key: 'nutrition' },
+    { id: 'mindset', label: 'Mindset', key: 'mindset' },
+  ];
+
+  for (const d of domainEntries) {
+    const matches = catalog.filter((p) => p.domain === d.id);
+    if (matches.length >= 2) {
+      sections.push({ id: d.id, title: d.label, programs: matches, categoryKey: d.key });
+    }
+  }
+
+  return sections;
+}
+
 export default function ExploreScreen() {
-  const [activeFilter, setActiveFilter] = useState('Tous');
   const [catalog, setCatalog] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const featured = catalog[0];
@@ -33,15 +69,7 @@ export default function ExploreScreen() {
     return () => { cancelled = true; };
   }, []);
 
-  const filteredPrograms = useMemo(() => {
-    if (!catalog.length) return [];
-    if (activeFilter === 'Tous') return catalog.slice(1);
-    const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const q = norm(activeFilter);
-    return catalog.filter((p) =>
-      norm(`${p.category} ${p.difficulty} ${p.domain} ${p.tags.join(' ')}`).includes(q),
-    );
-  }, [activeFilter, catalog]);
+  const sections = buildSections(catalog);
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'left', 'right']}>
@@ -89,53 +117,45 @@ export default function ExploreScreen() {
           </View>
         </Animated.View>
 
-        <View style={s.inner}>
-
-          {/* Filtres */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.pillRow} style={s.pillScroll}>
-            {filters.map((f) => (
-              <Pill key={f} active={activeFilter === f} onPress={() => setActiveFilter(f)}>{f}</Pill>
-            ))}
-          </ScrollView>
-
-          {/* À la une */}
-          {!loading && featured && (
-            <>
-              <SectionHeader title="À la une" action="" />
+        {/* À la une */}
+        {!loading && featured && (
+          <View style={s.section}>
+            <View style={s.sectionHead}>
+              <LabelText style={s.sectionTitle}>À la une</LabelText>
+            </View>
+            <View style={s.featuredPad}>
               <ProgramCard program={featured} featured />
-            </>
-          )}
+            </View>
+          </View>
+        )}
 
-          {/* Recommandés */}
-          {!loading && filteredPrograms.length > 0 && (
-            <>
-              <SectionHeader title="Recommandés" action="Voir tout" />
-              <View style={s.compactList}>
-                {filteredPrograms.slice(0, 5).map((program, i) => (
-                  <ProgramCard key={program.id} program={program} compact rank={i + 1} />
-                ))}
-              </View>
-            </>
-          )}
-
-          {/* Domaines */}
-          <SectionHeader title="Explorer par domaine" action="" />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.domainRow}>
-            {[
-              { label: 'Force', color: Palette.oxblood },
-              { label: 'Mobilité', color: Palette.success },
-              { label: 'Nutrition', color: Palette.gold },
-              { label: 'Mindset', color: Palette.inkSoft },
-              { label: 'Perte de gras', color: Palette.warning },
-            ].map(({ label, color }) => (
-              <Pressable key={label} style={[s.domainChip, { borderColor: color + '44' }]}>
-                <View style={[s.domainDot, { backgroundColor: color }]} />
-                <LabelText color={color}>{label}</LabelText>
+        {/* Carousels par catégorie */}
+        {!loading && sections.map((section) => (
+          <View key={section.id} style={s.section}>
+            <View style={s.sectionHead}>
+              <LabelText style={s.sectionTitle}>{section.title}</LabelText>
+              <Pressable
+                onPress={() =>
+                  router.push({
+                    pathname: '/catalog/[category]',
+                    params: { category: section.categoryKey },
+                  })
+                }>
+                <LabelText color={Palette.gold} style={s.seeAll}>Voir tout</LabelText>
               </Pressable>
-            ))}
-          </ScrollView>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={s.shelf}>
+              {section.programs.map((program, i) => (
+                <ProgramCard key={program.id} program={program} shelf delay={i * 80} />
+              ))}
+            </ScrollView>
+          </View>
+        ))}
 
-        </View>
+        <View style={s.bottomPad} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -170,7 +190,7 @@ const s = StyleSheet.create({
     borderColor: Palette.line,
   },
 
-  scroll: { paddingBottom: 32 },
+  scroll: { paddingBottom: 0 },
 
   hero: {
     minHeight: 240,
@@ -212,37 +232,37 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  inner: {
-    paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.three,
-    maxWidth: MaxContentWidth,
-    width: '100%',
-    alignSelf: 'center',
-    gap: Spacing.three,
+  section: {
+    paddingTop: Spacing.four,
+    gap: Spacing.two,
   },
-
-  pillScroll: { marginHorizontal: -Spacing.three },
-  pillRow: { flexDirection: 'row', gap: Spacing.two, paddingHorizontal: Spacing.three },
-
-  compactList: {
-    borderRadius: Radius.md,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Palette.line,
-    backgroundColor: 'rgba(255,253,247,0.72)',
-  },
-
-  domainRow: { gap: Spacing.two, paddingRight: Spacing.three },
-  domainChip: {
+  sectionHead: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    height: 40,
-    borderRadius: Radius.round,
-    borderWidth: 1,
-    backgroundColor: 'rgba(255,253,247,0.6)',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.three,
   },
-  domainDot: { width: 7, height: 7, borderRadius: 4 },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    color: Palette.ink,
+  },
+  seeAll: {
+    fontSize: 12,
+    letterSpacing: 0.2,
+  },
+
+  featuredPad: {
+    paddingHorizontal: Spacing.three,
+  },
+
+  shelf: {
+    gap: 12,
+    paddingHorizontal: Spacing.three,
+    paddingBottom: 4,
+  },
+
+  bottomPad: { height: 40 },
 });
 
