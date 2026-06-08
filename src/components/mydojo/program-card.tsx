@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, G, Path, Polygon, Rect } from 'react-native-svg';
 
 import { Avatar, Card } from '@/components/mydojo/primitives';
 import { BodyText, DisplayText, LabelText } from '@/components/mydojo/typography';
@@ -13,6 +13,8 @@ import type { Program } from '@/types/mydojo';
 type ProgramCardProps = {
   program: Program;
   featured?: boolean;
+  compact?: boolean;
+  rank?: number;
 };
 
 type ProgramVisual = {
@@ -24,7 +26,7 @@ type ProgramVisual = {
 
 type MetricKind = 'weeks' | 'sessions' | 'time';
 
-export function ProgramCard({ program, featured }: ProgramCardProps) {
+export function ProgramCard({ program, featured, compact, rank }: ProgramCardProps) {
   const openProgram = () => router.push({ pathname: '/program/[id]', params: { id: program.id } });
   const visual = visualForProgram(program);
   const level = labelForDifficulty(program.difficulty);
@@ -75,6 +77,62 @@ export function ProgramCard({ program, featured }: ProgramCardProps) {
                 </View>
               </View>
             </View>
+          </View>
+        </Pressable>
+      </Animated.View>
+    );
+  }
+
+  // ── COMPACT (App Store list style) ────────────────────────
+  if (compact) {
+    return (
+      <Animated.View entering={FadeInDown.delay((rank ?? 1) * 60).duration(400)}>
+        <Pressable
+          onPress={openProgram}
+          style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+          {rank !== undefined && (
+            <LabelText color={Palette.faint} style={styles.rowRank}>
+              {rank}
+            </LabelText>
+          )}
+          <View style={styles.rowThumb}>
+            <Image
+              source={program.image}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              contentPosition="center"
+            />
+            <LinearGradient
+              colors={['rgba(14,13,11,0)', 'rgba(14,13,11,0.22)']}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={[styles.rowAccentBar, { backgroundColor: visual.accent }]} />
+          </View>
+          <View style={styles.rowInfo}>
+            <View style={styles.rowTitleLine}>
+              <DisplayText style={styles.rowTitle} numberOfLines={1}>
+                {program.title}
+              </DisplayText>
+              {program.creator.verified && <VerifiedMark color={Palette.gold} />}
+            </View>
+            <View style={styles.rowMeta}>
+              <StarRating rating={program.rating} />
+              <LabelText style={styles.rowRatingCount}>
+                {program.reviewCount >= 1000
+                  ? `${(program.reviewCount / 1000).toFixed(1)}k`
+                  : program.reviewCount}
+              </LabelText>
+              <View style={styles.rowDot} />
+              <DomainBadge domain={program.domain} visual={visual} />
+            </View>
+            <LabelText numberOfLines={1}>
+              {program.creator.name} · {program.priceLabel}
+            </LabelText>
+          </View>
+          <View style={[styles.rowCta, { borderColor: visual.accent + '66' }]}>
+            <LabelText color={visual.accent} style={styles.rowCtaText}>
+              Voir
+            </LabelText>
           </View>
         </Pressable>
       </Animated.View>
@@ -296,6 +354,25 @@ function ArrowMark({ color }: { color: string }) {
         <Path d="M8 5.5 14.5 12 8 18.5" />
       </G>
     </Svg>
+  );
+}
+
+function StarRating({ rating }: { rating: number }) {
+  const full = Math.floor(rating);
+  const hasHalf = rating - full >= 0.4;
+  return (
+    <View style={{ flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Svg key={i} width={10} height={10} viewBox="0 0 24 24">
+          <Polygon
+            points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
+            fill={i <= full ? Palette.gold : i === full + 1 && hasHalf ? Palette.goldSoft : Palette.line}
+            stroke={Palette.goldSoft}
+            strokeWidth={0.5}
+          />
+        </Svg>
+      ))}
+    </View>
   );
 }
 
@@ -572,5 +649,83 @@ const styles = StyleSheet.create({
     borderRadius: Radius.round,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  /* ── Compact row (App Store style) ── */
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Palette.line,
+    backgroundColor: 'transparent',
+  },
+  rowRank: {
+    width: 18,
+    textAlign: 'center',
+    fontSize: 12,
+    letterSpacing: 0,
+  },
+  rowThumb: {
+    width: 66,
+    height: 66,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: Palette.paperDeep,
+    flexShrink: 0,
+  },
+  rowAccentBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    opacity: 0.72,
+  },
+  rowInfo: {
+    flex: 1,
+    minWidth: 0,
+    gap: 4,
+  },
+  rowTitleLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  rowTitle: {
+    fontSize: 15,
+    lineHeight: 16,
+    flex: 1,
+    minWidth: 0,
+  },
+  rowMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  rowRatingCount: {
+    fontSize: 10,
+    letterSpacing: 0,
+  },
+  rowDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: Palette.line,
+  },
+  rowCta: {
+    paddingHorizontal: 12,
+    height: 30,
+    borderRadius: Radius.round,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  rowCtaText: {
+    fontSize: 10,
+    letterSpacing: 0.8,
   },
 });
