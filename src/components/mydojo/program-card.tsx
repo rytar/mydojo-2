@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import Svg, { Circle, G, Line, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
 import { Avatar, Card } from '@/components/mydojo/primitives';
 import { BodyText, DisplayText, LabelText } from '@/components/mydojo/typography';
@@ -85,7 +85,7 @@ export function ProgramCard({ program, featured }: ProgramCardProps) {
     <Animated.View entering={FadeInDown.delay(90).duration(420)}>
       <Pressable onPress={openProgram} style={({ pressed }) => [pressed && styles.pressed]}>
         <Card style={[styles.card, { borderColor: visual.soft }]}>
-          <View style={styles.visualPane}>
+          <View style={styles.cover}>
             <Image
               source={program.image}
               style={StyleSheet.absoluteFill}
@@ -93,31 +93,23 @@ export function ProgramCard({ program, featured }: ProgramCardProps) {
               contentPosition="center"
             />
             <LinearGradient
-              colors={['rgba(14,13,11,0.02)', 'rgba(14,13,11,0.2)']}
-              locations={[0.18, 1]}
+              colors={['rgba(14,13,11,0.04)', 'rgba(14,13,11,0.16)', 'rgba(14,13,11,0.72)']}
+              locations={[0, 0.5, 1]}
               style={StyleSheet.absoluteFill}
             />
-            <View style={[styles.visualWash, { backgroundColor: visual.glow }]} />
-            <View style={[styles.visualAccent, { backgroundColor: visual.accent }]} />
-            <View style={styles.imageCorner}>
-              <DojoCorner color={Palette.paperSoft} />
+            <View style={styles.coverTop}>
+              <DomainBadge domain={program.domain} visual={visual} contrast />
+              <ProgramScore score={program.score} contrast />
+            </View>
+            <View style={styles.coverBottom}>
+              {showLevel && <LevelBadge label={level} contrast />}
+              <DisplayText color={Palette.paperSoft} style={styles.coverTitle} numberOfLines={1}>
+                {program.title}
+              </DisplayText>
             </View>
           </View>
 
           <View style={styles.cardBody}>
-            <View style={styles.cardHeader}>
-              <View style={styles.titleStack}>
-                <View style={styles.identityRow}>
-                  <DomainBadge domain={program.domain} visual={visual} />
-                  {showLevel && <LevelBadge label={level} />}
-                </View>
-                <DisplayText style={styles.cardTitle} numberOfLines={2}>
-                  {program.title}
-                </DisplayText>
-              </View>
-              <ProgramScore score={program.score} />
-            </View>
-
             <BodyText color={Palette.muted} style={styles.description} numberOfLines={2}>
               {program.description}
             </BodyText>
@@ -128,8 +120,10 @@ export function ProgramCard({ program, featured }: ProgramCardProps) {
               <MetricPill kind="time" label={`${program.averageMinutes} min`} />
             </View>
 
+            <View style={styles.divider} />
+
             <View style={styles.creatorRow}>
-              <Avatar label={program.creator.avatar} size={28} />
+              <Avatar label={program.creator.avatar} size={30} />
               <View style={styles.creatorCopy}>
                 <BodyText style={styles.creatorName} numberOfLines={1}>
                   {program.creator.name}
@@ -280,19 +274,6 @@ function MetricMon({ kind, color }: { kind: MetricKind; color: string }) {
           <Path d="M12 7.5V12l3.2 2.1" />
         </G>
       )}
-    </Svg>
-  );
-}
-
-function DojoCorner({ color }: { color: string }) {
-  return (
-    <Svg width={38} height={38} viewBox="0 0 38 38">
-      <G fill="none" stroke={color} strokeLinecap="round" strokeWidth={1.4} opacity={0.72}>
-        <Path d="M5 28c8-2 13-7 15-16" />
-        <Path d="M14 31c5-5 8-11 8-19" />
-        <Path d="M24 30c-1.2-7 1.1-13 7-18" />
-        <Line x1={8} y1={8} x2={30} y2={30} opacity={0.38} />
-      </G>
     </Svg>
   );
 }
@@ -451,51 +432,38 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   card: {
-    flexDirection: 'row',
-    minHeight: 162,
     backgroundColor: 'rgba(255,253,247,0.74)',
   },
-  visualPane: {
-    width: 120,
+  cover: {
+    width: '100%',
+    aspectRatio: 16 / 10,
     overflow: 'hidden',
     backgroundColor: Palette.paperDeep,
+    justifyContent: 'space-between',
+    padding: Spacing.two,
   },
-  visualWash: {
-    position: 'absolute',
-    left: -42,
-    bottom: -34,
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-  },
-  visualAccent: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    right: 0,
-    width: 3,
-    opacity: 0.84,
-  },
-  imageCorner: {
-    position: 'absolute',
-    left: 8,
-    bottom: 8,
-    opacity: 0.52,
-  },
-  cardBody: {
-    flex: 1,
-    padding: 12,
-    gap: 8,
-  },
-  cardHeader: {
+  coverTop: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     gap: Spacing.two,
+  },
+  coverBottom: {
+    gap: 6,
     alignItems: 'flex-start',
   },
-  titleStack: {
-    flex: 1,
-    minWidth: 0,
-    gap: 6,
+  coverTitle: {
+    fontSize: 26,
+    lineHeight: 27,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Palette.line,
+    marginVertical: 2,
+  },
+  cardBody: {
+    padding: Spacing.three,
+    gap: 10,
   },
   identityRow: {
     flexDirection: 'row',
@@ -530,10 +498,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 12,
     letterSpacing: 0.6,
-  },
-  cardTitle: {
-    fontSize: 20,
-    lineHeight: 21,
   },
   scoreBadge: {
     width: 43,

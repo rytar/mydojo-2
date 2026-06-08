@@ -4,6 +4,7 @@ import { Menu, Search, SlidersHorizontal } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Screen } from '@/components/mydojo/layout';
 import { ProgramCard } from '@/components/mydojo/program-card';
@@ -18,6 +19,7 @@ const filters = ['Tous', 'Débutant', 'Force', 'Perte de gras', 'Mobilité', 'Nu
 const exploreHero = require('@/assets/images/mydojo-hero.png');
 
 export default function ExploreScreen() {
+  const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState('Tous');
   const [catalog, setCatalog] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +73,9 @@ export default function ExploreScreen() {
 
   return (
     <Screen contentStyle={styles.screenContent} edges={['left', 'right']}>
-      <Animated.View entering={FadeInDown.delay(70).duration(460)} style={styles.hero}>
+      <Animated.View
+        entering={FadeInDown.delay(70).duration(460)}
+        style={[styles.hero, { paddingTop: insets.top + 18 }]}>
         <Image
           source={exploreHero}
           style={StyleSheet.absoluteFill}
@@ -89,7 +93,7 @@ export default function ExploreScreen() {
           end={{ x: 0.72, y: 0.48 }}
           style={StyleSheet.absoluteFill}
         />
-        <View style={styles.floatingHeader}>
+        <View style={[styles.floatingHeader, { top: insets.top + 16 }]}>
           <Pressable style={({ pressed }) => [styles.headerIcon, pressed && styles.pressed]}>
             <Menu color={Palette.paperSoft} size={20} strokeWidth={1.9} />
           </Pressable>
